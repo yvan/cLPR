@@ -254,7 +254,7 @@ class Projector(object):
 
 if __name__ == '__main__':
     p = Projector(500, 500)
-    cube_nodes = [[x,y,z] for x in (0,100) for y in (0,100) for z in (0,100)]
+    cube_nodes = [[x,y,z] for x in (0,150) for y in (0,150) for z in (0,150)]
     cube_nodes = np.array(cube_nodes)
     cube_faces = [[0,1,3,2], [7,5,4,6], [4,5,1,0], [2,3,7,6], [0,2,6,4], [5,7,3,1]]
     cube_faces = np.array(cube_faces)
