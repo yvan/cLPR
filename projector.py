@@ -1,7 +1,11 @@
 '''
-@yvan may 5 2018
+@yvan may 11 2018
 
-vectorized implementation of the simple 3d cube viewer.
+This script generates cLPR data using pygame and is the basis for a more general
+3D data generator I will program at some future time.
+
+Download the generated data here:
+
 
 '''
 import sys
@@ -10,47 +14,33 @@ import datetime
 import numpy as np
 import wireframe as wf
 
-key_to_movement = {
-    pygame.K_LEFT: lambda x: x.translate_all([-10, 0, 0]),
-    pygame.K_RIGHT: lambda x: x.translate_all([10, 0, 0]),
-    pygame.K_DOWN: lambda x: x.translate_all([0, 10, 0]),
-    pygame.K_UP: lambda x: x.translate_all([0, -10, 0]),
-    pygame.K_EQUALS: lambda x: x.scale_all(1.25),
-    pygame.K_MINUS: lambda x: x.scale_all(0.8),
-    pygame.K_q: (lambda x: x.rotate_all('x',  0.1)),
-    pygame.K_w: (lambda x: x.rotate_all('x', -0.1)),
-    pygame.K_a: (lambda x: x.rotate_all('y',  0.1)),
-    pygame.K_s: (lambda x: x.rotate_all('y', -0.1)),
-    pygame.K_z: (lambda x: x.rotate_all('z',  0.1)),
-    pygame.K_x: (lambda x: x.rotate_all('z', -0.1))
-}
-
 class Projector(object):
     '''
     Makes 2D projections of 3d wireframes on a pygame screen.
     '''
     def __init__(self, width, height):
+        # setup pygame
         self.width = width
         self.height = height
         pygame.init()
         self.screen = pygame.display.set_mode((width, height))
         pygame.display.set_caption('Wireframe Display')
         self.background = (10,10,50)
-
+        # where we will store our cube
         self.wireframes = {}
+        # whether to display different parts
         self.display_nodes = False
         self.display_edges = False
         self.display_faces = True
+        # what color to paint nodes edges
         self.node_color = (255, 255, 255)
         self.edge_color = (255, 255, 255)
-        self.node_radius = 4 # how big the 'points' are in our cube
-        self.light = wf.Wireframe(np.array([[0, -1, 0]]))
-        self.min_light = 0.02
-        self.max_light = 1.0
-        self.light_range = self.max_light - self.min_light
-        self.perspective = 300
+        # how big the 'points'/'nodes' are in our cube
+        self.node_radius = 4
+        # to slow down the viewer
         self.fps = 5
-        self.limit_samples = 10 #10000
+        # primarily for testing or redueced generation
+        self.limit_samples = 100
 
     def add_wireframe(self, name, wireframe):
         '''
@@ -119,12 +109,11 @@ class Projector(object):
             self.display()
             pygame.display.update()
             # save a picture, then reset the cube to its original positions/rotations
-            self.save_projection('cube', str(seq_step))
+            # self.save_projection('cube', str(seq_step))
             cube.reset_nodes()
 
-
         # once we exit the run loop save the positions
-        self.save_wireframes_positions(rotation_positions, self.wireframes.keys())
+        self.save_wireframe_data(rotation_positions)
         pygame.quit()
         sys.exit()
 
@@ -136,7 +125,7 @@ class Projector(object):
         for wireframe in self.wireframes.values():
             nodes = wireframe.nodes
             if self.display_faces:
-                for face, color in zip(wireframe.faces, wireframe.facecolors):
+                for face, color in zip(wireframe.sorted_faces(), wireframe.facecolors):
                     vector1 = (nodes[face[1]] - nodes[face[0]])[:3]
                     vector2 = (nodes[face[2]] - nodes[face[0]])[:3]
 
@@ -149,11 +138,6 @@ class Projector(object):
                     towards_us = np.dot(normal, np.array([0,0,-1]))
 
                     if towards_us:
-                        # convert the x,y,z in our normal
-                        # vector to be between 0-1
-                        normal /= np.linalg.norm(normal)
-                        theta = np.dot(normal, self.light.nodes[0][:3])
-
                         # draw all our faces
                         pygame.draw.polygon(self.screen,
                                             color,
@@ -238,19 +222,24 @@ class Projector(object):
     def create_rotation_sequence(self):
         '''
         Autorotates through all possible combinations of x,y,z
-        and takes a screenshot.
+        rotations and takes a screenshot.
         '''
         rotations = []
-        for i in np.arange(0, 6.3, 0.3):
-            for j in np.arange(0, 6.3, 0.3):
-                for k in np.arange(0, 6.3, 0.3):
-                    rotations.append((i,j,k))
+        for rot_x in np.arange(0, 6.3, 0.3):
+            for rot_y in np.arange(0, 6.3, 0.3):
+                for rot_z in np.arange(0, 6.3, 0.3):
+                    rotations.append((rot_x,rot_y,rot_z))
         return rotations
 
-    def save_wireframes_positions(self, rotation_positions, names):
-        for wireframe_points, name in zip(rotation_positions, names):
-            # save the file and the numpy version used write
-            np.save(f'data/{name}-{np.__version__}.npy', wireframe_points)
+    def save_wireframe_data(self, rotation_positions):
+        '''
+        Saves the wireframe data to a numpy file.
+        Args:
+            :param rotation_positions: (numpy array) N x Z x 6, where N is
+            frames, Z is nodes, 6 is XYZ coordiantes and XYZ roations
+        '''
+        name = 'cube'
+        np.save(f'data/{name}-{np.__version__}.npy', rotation_positions)
 
 if __name__ == '__main__':
     p = Projector(500, 500)
@@ -268,9 +257,6 @@ if __name__ == '__main__':
     ]
     cube_colors = np.array(cube_colors)
     cube = wf.Wireframe(cube_nodes, cube_faces, cube_colors)
-    cube.output_nodes()
-    cube.output_edges()
-    cube.output_faces()
     p.add_wireframe('cube', cube)
     p.run()
 
