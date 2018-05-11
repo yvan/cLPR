@@ -39,7 +39,7 @@ class Projector(object):
         # how big the 'points'/'nodes' are in our cube
         self.node_radius = 4
         # to slow down the viewer
-        self.fps = 5
+        self.fps = None # default=None for testing set to 5, it will slow down generation a lot
         # primarily for testing or redueced generation
         # leave False unless testing
         self.limit_samples = False
@@ -81,7 +81,7 @@ class Projector(object):
         rotation_positions = np.zeros((row_count, wireframe.nodes.shape[0],6))
 
         while running:
-            clockobject.tick(self.fps)
+            if self.fps: clockobject.tick(self.fps)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -112,7 +112,7 @@ class Projector(object):
             self.display()
             pygame.display.update()
             # save a picture, then reset the cube to its original positions/rotations
-            # self.save_projection('cube', str(seq_step))
+            self.save_projection('cube', str(seq_step))
             cube.reset_nodes()
 
         # once we exit the run loop save the positions

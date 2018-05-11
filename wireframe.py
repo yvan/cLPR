@@ -103,7 +103,7 @@ class Wireframe(object):
         ones_col = np.ones((len(nodes), 1))
         self.nodes = np.hstack((nodes, ones_col))
         self.nodes_initial = copy.deepcopy(self.nodes)
-        self.edges = np.zeros((0,2))
+        self.edges = np.zeros((0,2)).astype(np.int)
         self.faces = faces
         self.facecolors = facecolors
 
