@@ -127,7 +127,7 @@ class Wireframe(object):
         Print the nodes of the wireframe. x,y,z are position parameters,
         e is an extra parameter to make matrix multiplication easier.
         '''
-        print('\n--- nodes (x, y, z, _) --- ')
+        print(f'\n---{self.nodes.shape[0]} nodes (x, y, z, _) --- ')
         if self.nodes == []:
             print('There are no nodes!')
         else:
@@ -138,7 +138,7 @@ class Wireframe(object):
         '''
         Print the edges of the wireframe
         '''
-        print('\n--- edges (p1 <-> p2) --- ')
+        print(f'\n--- {self.edges.shape[0]} edges (p1 <-> p2) --- ')
         if self.edges == []:
             print('There are no edges!')
         else:
@@ -149,7 +149,7 @@ class Wireframe(object):
         '''
         Print faces of the wireframe
         '''
-        print('\n--- faces --- ')
+        print(f'\n---{self.faces.shape[0]} faces --- ')
         if self.faces == []:
             print('There are no faces!')
         else:

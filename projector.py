@@ -1,8 +1,8 @@
 '''
 @yvan may 11 2018
 
-This script generates cLPR data using pygame and is the basis for a more general
-3D data generator I will program at some future time.
+This script generates cLPR data using pygame and is the basis
+for a more general 3D data generator I will program at some future time.
 
 Download the generated data here:
 
@@ -10,6 +10,7 @@ Download the generated data here:
 '''
 import sys
 import pygame
+import argparse
 import datetime
 import numpy as np
 import wireframe as wf
@@ -40,7 +41,9 @@ class Projector(object):
         # to slow down the viewer
         self.fps = 5
         # primarily for testing or redueced generation
-        self.limit_samples = 100
+        # leave False unless testing
+        self.limit_samples = False
+        # use exsiting position and data
 
     def add_wireframe(self, name, wireframe):
         '''
@@ -240,6 +243,14 @@ class Projector(object):
         '''
         name = 'cube'
         np.save(f'data/{name}-{np.__version__}.npy', rotation_positions)
+
+def parse_args(args):
+    p = argparse.ArgumentParser()
+    p.add_argument('-g', '--glob', type=str, help='Unix style glob path to the images you want to convert.')
+    p.add_argument('-o', '--out', type=str, help='The output path (folder) to put all the files.')
+    p.add_argument('-d1', '--dim1', type=int, help='The first (height) dimension of the image.')
+    p.add_argument('-d2', '--dim2', type=int, help='The second (width) dimension of the image.')
+    p.add_argument('-f', '--format', type=str, help='The output format, JPEG, or PNG, or BMP.')
 
 if __name__ == '__main__':
     p = Projector(500, 500)
