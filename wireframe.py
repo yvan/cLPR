@@ -143,7 +143,7 @@ class Wireframe(object):
             print('There are no edges!')
         else:
             for i, (node1, node2) in enumerate(self.edges):
-                print(f'{i} {node1} - {node2}')
+                print(f'{i} ({node1} - {node2})')
 
     def output_faces(self):
         '''
@@ -155,7 +155,7 @@ class Wireframe(object):
         else:
             for i, nodes in enumerate(self.faces):
                 f = ', '.join([f'{n}' for n in nodes])
-                print(f'{i}: {f}')
+                print(f'{i}: ({f})')
 
     def transform(self, matrix):
         '''
@@ -197,11 +197,11 @@ class Wireframe(object):
         return sorted(zip(self.faces,self.facecolors), key=lambda face: min(self.nodes[f,2] for f in face[0]))
 
 if __name__ == '__main__':
-    cube_nodes = [[x,y,z] for x in (0,1) for y in (0,1) for z in (0,1)]
+    cube_nodes = [[x,y,z] for x in (0,100) for y in (0,100) for z in (0,100)]
     cube_nodes = np.array(cube_nodes)
     cube_faces = [[0,1,3,2], [7,5,4,6], [4,5,1,0], [2,3,7,6], [0,2,6,4], [5,7,3,1]]
     cube_faces = np.array(cube_faces)
-    cube_colors = [[255, 255, 255], [154,205,50], [128,0,0], [70,130,180], [75,0,130], [199,21,133]]
+    cube_colors = [[255, 0, 0],[0,255,0],[0,0,255],[255,255,0],[255,0,255],[0,255,255]]
     cube_colors = np.array(cube_colors)
     cube = Wireframe(cube_nodes, cube_faces, cube_colors)
     cube.output_nodes()

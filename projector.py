@@ -113,7 +113,7 @@ class Projector(object):
             self.display()
             pygame.display.update()
             # save a picture, then reset the cube to its original positions/rotations
-            self.save_projection(key, str(seq_step))
+            # self.save_projection(key, str(seq_step))
             cube.reset_nodes()
 
         # once we exit the run loop save the positions
@@ -253,25 +253,17 @@ def parse_args(args):
 
 if __name__ == '__main__':
     # original colors
-    p = Projector(300, 300)
-    cube_nodes = [[x,y,z] for x in (0,150) for y in (0,150) for z in (0,150)]
+    p = Projector(256, 256)
+    cube_nodes = [[x,y,z] for x in (0,100) for y in (0,100) for z in (0,100)]
     cube_nodes = np.array(cube_nodes)
     cube_faces = [[0,1,3,2], [7,5,4,6], [4,5,1,0], [2,3,7,6], [0,2,6,4], [5,7,3,1]]
     cube_faces = np.array(cube_faces)
-    cube_colors = [
-    [255, 0, 0],
-    [0,255,0],
-    [0,0,255],
-    [255,255,0],
-    [255,0,255],
-    [0,255,255]
-    ]
-
+    cube_colors = [[255, 0, 0],[0,255,0],[0,0,255],[255,255,0],[255,0,255],[0,255,255]]
     cube_colors = np.array(cube_colors)
     cube = wf.Wireframe(cube_nodes, cube_faces, cube_colors)
     p.add_wireframe('cube1', cube)
     p.run()
-    # code for generating other cubes
+    # code for generating other cubesew
     # # different colors
     # p = Projector(500, 500)
     # cube_colors = [
