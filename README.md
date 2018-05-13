@@ -1,16 +1,42 @@
-cLPR: Generating A 3D Dataset for learning pose and rotation
+CLPR: Generating A 3D Dataset for learning pose and rotation
 
-Today I'm releasing the cLPR dataset, a baseline dataset for doing work in 3D machine learning. The name stands for Cubes for Learning Pose and Rotation. The goal is to provide a nice baseline dataset of a simple colored 3D cube in many different positions for testing machine learning algorithms whose goal is to learn about pose and rotation.
+Today I'm releasing the CLPR dataset, a baseline dataset for doing work in 3D machine learning. The name stands for Cubes for Learning Pose and Rotation. The goal is to provide a nice baseline dataset of 2 simple colored 3D cubes in many different positions for testing machine learning algorithms whose goal is to learn about pose and rotation.
 
-The dataset contains 32x32, 64x64, 128x128, 500x500 jpg images of the cube (2d projections of the 3d object). It also includes a numpy file which contains for every frame the position of the nodes, and the rotations applied to them. The file is called `cube-x.xx.x.npy` where `x.xx.x` is the numpy version used to dump the file. The [code](https://github.com/yvan/cLPR) used to generate the dataset is on github. It's always good to have the code yourself that way you can check any details you want and even generate your own version of the data.
+# The data:
 
-The dataset is produced using a package called 'pygame' which is a package originally designed for making little python games. The package is nice because it lets you easily draw and render objects in 2d or 3d. OpenGL is another option. I didn't use it for a few reasons (it's hard to use, lots of jargon, difficult to read the code). In the future we may have an OpenGL version of the data generator for GPU optimized data generation. I wanted the code to be easy enough for someone with limited experience and basic knowledge of matrix multiplication to understand and accessible to people without GPU access.
+The dataset contains 32x32, 64x64, 128x128, 500x500 jpg images of 3 cubes (2d projections of the 3d object). Two of the cubes are essentially the same cube but the faces have been moved around, so if a red face is facing you you should expect to see completely different position/rotation coordinates. The third cub has different colors.
+
+# The labels:
+
+The labels are provided in the binary numpy file. The file is called `cubeN-x.xx.x.npy` where `x.xx.x` is the numpy version used to dump the file and N is the cube this data file is for. It contains for every frame the position of the nodes, and the rotations applied to them for that cube. So the structure for one would look like:
+
+```numpy
+np.array([
+.
+.
+.
+[[x,y,z,xrot,yrot,zrot],[x,y,z,xrot,yrot,zrot],[...],[...],[...],[...],[...],[...]], <-- single frame/rotation
+[[x,y,z,xrot,yrot,zrot],[x,y,z,xrot,yrot,zrot],[...],[...],[...],[...],[...],[...]],
+.
+.
+.
+])
+```
+
+It's an FRAMES x NODES x 6 numpy array, where the first 3 values of the last dimension are x,y,z position and the last 3 values are rotation. You can also just create whatever labels
+you want using the script.
+
+# Making the dataset:
+
+The dataset is produced using a package called 'pygame' which is a package originally designed for making python games. The package is nice because it lets you easily draw and render objects in 2d or 3d. OpenGL is another option. I didn't use it for a few reasons (it's hard to use, lots of jargon, difficult to read the code). In the future we may have an OpenGL version of the data generator for GPU optimized data generation. I wanted the code to be easy enough for someone with limited experience and basic knowledge of matrix multiplication to understand and accessible to people without GPU access.
+
+The [code](https://github.com/yvan/cLPR) used to generate the dataset is on github.
 
 Let's go over how the code works.
 
 # Step 1 Create a wireframe
 
-First we create a wireframe of the cube. This wireframe consists of nodes, edges, and faces. The nodes are points in space, each represneted with x,y,z coordinates. We store all the nodes in an Nx3 numpy array. Edges are two nodes (the indices of the nodes in the numpy array). Faces are 4 nodes connected together (again the indices of the nodes in the numpy array).
+First we create a wireframe of the cube. This wireframe consists of nodes, edges, and faces. The nodes are points in space, each represented with x,y,z coordinates. We store all the nodes in an Nx3 numpy array. Edges are two nodes (the indices of the nodes in the numpy array). Faces are 4 nodes connected together (again the indices of the nodes in the numpy array).
 
 You can create a wireframe like this:
 
@@ -77,11 +103,17 @@ cube.reset_nodes()
 
 While I do this I screen shot the pygame screen after every rotation, and store position information in a numpy array. During the process I write the images to disk, and at the end i store the
 
+# Final step
+
+Visual inspection and programatic testing of labels. Basically I play back the numpy file and also run it through a function which compares it a against known correct values for the positions at every section.
+
 Some things you can do with cLPR:
 
 1 - Use unsupervised learning, Variational Auto Encoders to learn a representation that memorizes the content of the cube and the pose.
 
-2 - Use
+2 - Predict the position of the noes the cube from the visual 2d projection.
+
+3 - Learn a representation for each cube.
 
 Thanks
 

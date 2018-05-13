@@ -19,17 +19,19 @@ def parse_args(args):
     p.add_argument('-d1', '--dim1', type=int, help='The first (height) dimension of the image.')
     p.add_argument('-d2', '--dim2', type=int, help='The second (width) dimension of the image.')
     p.add_argument('-f', '--format', type=str, help='The output format, JPEG, or PNG, or BMP.')
+    return p.parse_args(args)
 
 if __name__ == '__main__':
+    print()
     args = parse_args(sys.argv[1:]).__dict__
-    glob = args['input']
+    g = args['glob']
     out = args['out']
     dim1 = args['dim1']
     dim2 = args['dim2']
     format = args['format'].upper()
     ext = format.lower()
 
-    img_paths = glob.glob(glob)
+    img_paths = glob.glob(g)
     for img_path in img_paths:
         img = Image.open(img_path)
         path, basename = os.path.split(img_path)

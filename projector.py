@@ -77,7 +77,8 @@ class Projector(object):
         # is a frame, then there is a dimension
         # for nodes, then 6 columns, 3 for XYZ coords,
         # 3 for XYZ rotations in radians
-        wireframe = self.wireframes['cube']
+        key = list(self.wireframes.keys())[0]
+        wireframe = self.wireframes[key]
         rotation_positions = np.zeros((row_count, wireframe.nodes.shape[0],6))
 
         while running:
@@ -92,7 +93,7 @@ class Projector(object):
             cube.center_wireframe((self.width//2, self.width//2,0))
 
             # print every 100 steps the progress
-            if not seq_step % 100: prog = seq_step/len(seq); print(f'{prog}')
+            if not seq_step % 100: prog = round(seq_step/len(seq)*100, 2); print(f'progress: {prog}%')
 
             # get the shapes of the rotations and the wireframe node positions consistent
             # so they can both be inserted into the same np array
@@ -112,13 +113,12 @@ class Projector(object):
             self.display()
             pygame.display.update()
             # save a picture, then reset the cube to its original positions/rotations
-            self.save_projection('cube', str(seq_step))
+            self.save_projection(key, str(seq_step))
             cube.reset_nodes()
 
         # once we exit the run loop save the positions
         self.save_wireframe_data(rotation_positions)
         pygame.quit()
-        sys.exit()
 
     def display(self):
         '''
@@ -128,7 +128,9 @@ class Projector(object):
         for wireframe in self.wireframes.values():
             nodes = wireframe.nodes
             if self.display_faces:
-                for face, color in zip(wireframe.sorted_faces(), wireframe.facecolors):
+                for face_color in zip(wireframe.sorted_faces()):
+                    color = face_color[0][1]
+                    face = face_color[0][0]
                     vector1 = (nodes[face[1]] - nodes[face[0]])[:3]
                     vector2 = (nodes[face[2]] - nodes[face[0]])[:3]
 
@@ -228,9 +230,9 @@ class Projector(object):
         rotations and takes a screenshot.
         '''
         rotations = []
-        for rot_x in np.arange(0, 6.3, 0.3):
-            for rot_y in np.arange(0, 6.3, 0.3):
-                for rot_z in np.arange(0, 6.3, 0.3):
+        for rot_x in np.arange(0, 6.3, 0.1):
+            for rot_y in np.arange(0, 6.3, 0.1):
+                for rot_z in np.arange(0, 6.3, 0.1):
                     rotations.append((rot_x,rot_y,rot_z))
         return rotations
 
@@ -241,35 +243,64 @@ class Projector(object):
             :param rotation_positions: (numpy array) N x Z x 6, where N is
             frames, Z is nodes, 6 is XYZ coordiantes and XYZ roations
         '''
-        name = 'cube'
+        name = list(self.wireframes.keys())[0]
         np.save(f'data/{name}-{np.__version__}.npy', rotation_positions)
 
 def parse_args(args):
     p = argparse.ArgumentParser()
-    p.add_argument('-g', '--glob', type=str, help='Unix style glob path to the images you want to convert.')
-    p.add_argument('-o', '--out', type=str, help='The output path (folder) to put all the files.')
-    p.add_argument('-d1', '--dim1', type=int, help='The first (height) dimension of the image.')
-    p.add_argument('-d2', '--dim2', type=int, help='The second (width) dimension of the image.')
-    p.add_argument('-f', '--format', type=str, help='The output format, JPEG, or PNG, or BMP.')
+    p.add_argument('-f', '--fps', type=int, default=None, help='The frames per second of the generation process.')
+    p.add_argument('-s', '--step-size', type=float, default=0.3, help='The step size for the rotations')
 
 if __name__ == '__main__':
-    p = Projector(500, 500)
+    # original colors
+    p = Projector(300, 300)
     cube_nodes = [[x,y,z] for x in (0,150) for y in (0,150) for z in (0,150)]
     cube_nodes = np.array(cube_nodes)
     cube_faces = [[0,1,3,2], [7,5,4,6], [4,5,1,0], [2,3,7,6], [0,2,6,4], [5,7,3,1]]
     cube_faces = np.array(cube_faces)
     cube_colors = [
-    [255, 255, 255],
-    [154,205,50],
-    [128,0,0],
-    [70,130,180],
-    [75,0,130],
-    [199,21,133]
+    [255, 0, 0],
+    [0,255,0],
+    [0,0,255],
+    [255,255,0],
+    [255,0,255],
+    [0,255,255]
     ]
+
     cube_colors = np.array(cube_colors)
     cube = wf.Wireframe(cube_nodes, cube_faces, cube_colors)
-    p.add_wireframe('cube', cube)
+    p.add_wireframe('cube1', cube)
     p.run()
+    # code for generating other cubes
+    # # different colors
+    # p = Projector(500, 500)
+    # cube_colors = [
+    # [75,43,23],
+    # [255, 200, 255],
+    # [120,0,50],
+    # [80,180,80],
+    # [75,75,130],
+    # [99,27,33]
+    # ]
+    # cube_colors = np.array(cube_colors)
+    # cube = wf.Wireframe(cube_nodes, cube_faces, cube_colors)
+    # p.add_wireframe('cube2', cube)
+    # p.run()
+    #
+    # # shifted colors
+    # p = Projector(500, 500)
+    # cube_colors = [
+    # [199,21,133],
+    # [75,0,130],
+    # [70,130,180],
+    # [128,0,0],
+    # [154,205,50],
+    # [255, 255, 255]
+    # ]
+    # cube_colors = np.array(cube_colors)
+    # cube = wf.Wireframe(cube_nodes, cube_faces, cube_colors)
+    # p.add_wireframe('cube2', cube)
+    # p.run()
 
 '''
 Resources / Credits:

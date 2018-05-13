@@ -190,9 +190,11 @@ class Wireframe(object):
         self.transform(mt)
 
     def sorted_faces(self):
-        # return np.sort(self.faces)
         # sorts faces byt the minimum Z value of all their nodes
-        return sorted(self.faces, key=lambda face: min(self.nodes[f,2] for f in face))
+        # the minimum z value is whats closer to our viewpoint
+        # needs to also return the colors so they are correct
+        # with the new sorted array
+        return sorted(zip(self.faces,self.facecolors), key=lambda face: min(self.nodes[f,2] for f in face[0]))
 
 if __name__ == '__main__':
     cube_nodes = [[x,y,z] for x in (0,1) for y in (0,1) for z in (0,1)]
