@@ -5,9 +5,9 @@ This script generates cLPR data using pygame and is the basis
 for a more general 3D data generator I will program at some future time.
 
 Download the generated data here:
-
-
 '''
+
+import os
 import sys
 import pygame
 import argparse
@@ -31,19 +31,18 @@ class Projector(object):
         self.wireframes = {}
         # whether to display different parts
         self.display_nodes = True
-        self.display_edges = False
         self.display_faces = True
         # what color to paint nodes edges
         self.node_colors = [[0,255,0],[255,255,0],[255, 0, 0],[0,0,255],[0,255,255],[0,200,255],[255,200,255],[200,200,255]]
-        self.edge_color = (255, 255, 255)
         # how big the 'points'/'nodes' are in our cube
-        self.node_radius = 4
+        self.node_radius = 5
         # to slow down the viewer
         # default=None for testing set to 5, it will slow down generation a lot
         self.fps = fps
         # leave False unless testing
-        self.limit_samples = 10
+        self.limit_samples = False
         # use exsiting position and data
+        self.save_data = save_data
 
     def add_wireframe(self, name, wireframe):
         '''
@@ -51,7 +50,7 @@ class Projector(object):
         '''
         self.wireframes[name] = wireframe
 
-    def run(self, test=False):
+    def run(self, test_npy=False):
         '''
         Run pygame and dispaly our wireframes
         '''
@@ -61,7 +60,16 @@ class Projector(object):
         running = True
         seq_step = 0
         # create our set of rotations
-        seq = self.create_rotation_sequence()
+        if test_npy:
+            data = np.load(test_npy)
+            # for all nodes get the positions
+            pos = data[:,:,:3]
+            # for all nodes get the roations
+            # rotation si the same across nodes
+            # so we get the first one
+            seq = data[:,:,3]
+        else:
+            seq = self.create_rotation_sequence()
         # store a numpy array for every wireframe
         # some may differ. this will allow us to
         # create entire scenes and learn them later
@@ -86,12 +94,14 @@ class Projector(object):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-            if test:
-                # for
-                pass
+            if test_npy:
+                for radians, axis  in zip(tuple(seq[seq_step]), ('x','y','z')):
+                    self.rotate_all(axis, radians)
+                # set the cube nodes the stored positions
+                cube.nodes = pos[seq_step]
             else:
                 # go to the next rotation, recenter our wireframe
-                for radians, axis in zip(seq[seq_step] , ('x','y','z')*len(seq)):
+                for radians, axis in zip(seq[seq_step] , ('x','y','z')):
                     self.rotate_all(axis, radians)
                 cube.center_wireframe((self.width//2, self.width//2, 0))
 
@@ -100,16 +110,19 @@ class Projector(object):
 
             # get the shapes of the rotations and the wireframe node positions consistent
             # so they can both be inserted into the same np array
-            for _, wireframe in self.wireframes.items():
-                # seq step is already a 3 element array, so tile takes NX1
-                rotation_array = np.tile(np.array(seq[seq_step]), (wireframe.nodes.shape[0],1))
-                # combine the rotations and positions
-                rotation_positions[seq_step] = np.hstack((wireframe.nodes[:, :3], rotation_array))
+            if self.save_data:
+                for _, wireframe in self.wireframes.items():
+                    # seq step is already a 3 element array, so tile takes NX1
+                    rotation_array = np.tile(np.array(seq[seq_step]), (wireframe.nodes.shape[0],1))
+                    # combine the rotations and positions
+                    rotation_positions[seq_step] = np.hstack((wireframe.nodes[:, :3], rotation_array))
 
             # keep track of which rotation we are on, if we are on
             # the right one, leave the run loop
             seq_step += 1
             if seq_step == len(seq) or seq_step == self.limit_samples:
+                print(seq_step, len(seq))
+                print('Stopping run.')
                 running = False
 
             # update the display of our cube
@@ -117,11 +130,11 @@ class Projector(object):
             pygame.display.update()
             # save a picture, then reset the cube to its
             # original positions/rotations
-            #self.save_projection(key, str(seq_step))
+            if self.save_data: self.save_projection(key, str(seq_step))
             cube.reset_nodes()
 
         # once we exit the run loop save the positions
-        #self.save_wireframe_data(rotation_positions)
+        if self.save_data: self.save_wireframe_data(rotation_positions)
         pygame.quit()
 
     def display(self):
@@ -152,17 +165,6 @@ class Projector(object):
                                             color,
                                             [(nodes[node,0], nodes[node,1]) for node in face],
                                             0)
-
-                        if self.display_edges:
-                            for n1, n2 in wireframe.edges:
-                                if n1 in face or n2 in face:
-                                    pygame.draw.aaline(self.screen,
-                                                    self.edge_color,
-                                                    wireframe.nodes[n1,:2],
-                                                    wireframe.nodes[n2,:2],
-                                                    1
-                                                )
-
             if self.display_nodes:
                 for node, color in zip(wireframe.nodes, self.node_colors):
                     pygame.draw.circle(self.screen,
@@ -181,17 +183,6 @@ class Projector(object):
         for _, wireframe in self.wireframes.items():
             wireframe.transform(matrix)
 
-    def scale_all(self, scale):
-        '''
-        Scale all the wireframes on the the screen.
-        Args:
-            :param scale: (float) The parameter (scale>1-bigger, scale<1-smaller)
-            telling pygame to scale the wireframes up or down.
-        '''
-        matrix = wf.create_scale_matrix(scale, self.width/2, self.height/2, 0)
-        for _, wireframe in self.wireframes.items():
-            wireframe.transform(matrix)
-
     def rotate_all(self, axis, radians):
         '''
         Rotate all wireframes in the screen.
@@ -203,29 +194,6 @@ class Projector(object):
         rotation_matrix = getattr(wf, rotate_func_name)(radians)
         for _,wireframe in self.wireframes.items():
             wireframe.transform(rotation_matrix)
-
-    def save_projection(self, name, idx=datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')):
-        '''
-        Saves the pygame screen as an image.
-        Args:
-            :param name: name to give to your image.
-            :param idx: an index value to pass in for naming your files, so this
-            is an external counter you pass in
-            if you don't pass one in the datetime for right now is used.
-        '''
-        pygame.image.save(self.screen, f'imgs_bmp/{name}_index_{idx}.bmp')
-
-    def rotate_randomly(self):
-        '''
-        Rotates randomly.
-        '''
-        rand_n = np.random.random()
-        if rand_n < 0.3 :
-            self.rotate_all('x',  0.05)
-        elif rand_n > 0.3 and rand_n < 0.6:
-            self.rotate_all('y',  0.05)
-        else:
-            self.rotate_all('z', 0.05)
 
     def create_rotation_sequence(self):
         '''
@@ -249,11 +217,22 @@ class Projector(object):
         name = list(self.wireframes.keys())[0]
         np.save(f'data/{name}-{np.__version__}.npy', rotation_positions)
 
+    def save_projection(self, name, idx=datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')):
+        '''
+        Saves the pygame screen as an image.
+        Args:
+            :param name: name to give to your image.
+            :param idx: an index value to pass in for naming your files, so this
+            is an external counter you pass in
+            if you don't pass one in the datetime for right now is used.
+        '''
+        pygame.image.save(self.screen, f'imgs_bmp/{name}_index_{idx}.bmp')
+
 def parse_args(args):
     p = argparse.ArgumentParser()
     p.add_argument('-f', '--fps', type=int, default=None, help='The frames per second of the generation process.')
     p.add_argument('-s', '--step-size', type=float, default=0.3, help='The step size for the rotations')
-    p.add_argument('-t', '--test-npy', type=str, help='Tests a numpy file to make sure it\'s good.')
+    p.add_argument('-t', '--test-npy', type=str, help='Tests a numpy file to make sure it\'s good. This arg is the file to test.')
     p.add_argument('-d', '--data-save', action='store_true', help='Whether to save data.')
     return p.parse_args(args)
 
@@ -264,6 +243,11 @@ if __name__ == '__main__':
     test = args['test_npy']
     save = args['data_save']
 
+    # this is the folder where our
+    # images are saved
+    if not os.path.exists('./imgs_bmp'):
+        os.mkdir('imgs_bmp')
+
     p = Projector(256, 256, fps, save, step)
     cube_nodes = [[x,y,z] for x in (0,100) for y in (0,100) for z in (0,100)]
     cube_nodes = np.array(cube_nodes)
@@ -273,7 +257,7 @@ if __name__ == '__main__':
     cube_colors = np.array(cube_colors)
     cube = wf.Wireframe(cube_nodes, cube_faces, cube_colors)
     p.add_wireframe('cube1', cube)
-    p.run()
+    p.run(test_npy=test)
 
 '''
 Resources / Credits:

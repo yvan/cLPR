@@ -18,7 +18,7 @@ def parse_args(args):
     p.add_argument('-o', '--out', type=str, help='The output path (folder) to put all the files.')
     p.add_argument('-d1', '--dim1', type=int, help='The first (height) dimension of the image.')
     p.add_argument('-d2', '--dim2', type=int, help='The second (width) dimension of the image.')
-    p.add_argument('-f', '--format', type=str, help='The output format, JPEG, or PNG, or BMP.')
+    p.add_argument('-f', '--format', type=str, help='The output format, JPEG, or PNG, BMP.')
     return p.parse_args(args)
 
 if __name__ == '__main__':
@@ -29,6 +29,13 @@ if __name__ == '__main__':
     dim2 = args['dim2']
     format = args['format'].upper()
     ext = format.lower()
+
+    if format == 'JPG':
+        if not os.path.exists('./imgs_jpg'): os.mkdir('imgs_jpg')
+    elif format == 'PNG':
+        if not os.path.exists('./imgs_png'): os.mkdir('imgs_png')
+    elif format == 'BMP':
+        if not os.path.exists('./imgs_bmp'): os.mkdir('imgs_bmp')
 
     img_paths = glob.glob(g)
     for img_path in img_paths:
