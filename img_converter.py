@@ -22,7 +22,6 @@ def parse_args(args):
     return p.parse_args(args)
 
 if __name__ == '__main__':
-    print()
     args = parse_args(sys.argv[1:]).__dict__
     g = args['glob']
     out = args['out']

@@ -19,7 +19,7 @@ class Projector(object):
     '''
     Makes 2D projections of 3d wireframes on a pygame screen.
     '''
-    def __init__(self, width, height):
+    def __init__(self, width, height, fps, save_data, step_size):
         # setup pygame
         self.width = width
         self.height = height
@@ -30,19 +30,19 @@ class Projector(object):
         # where we will store our cube
         self.wireframes = {}
         # whether to display different parts
-        self.display_nodes = False
+        self.display_nodes = True
         self.display_edges = False
         self.display_faces = True
         # what color to paint nodes edges
-        self.node_color = (255, 255, 255)
+        self.node_colors = [[0,255,0],[255,255,0],[255, 0, 0],[0,0,255],[0,255,255],[0,200,255],[255,200,255],[200,200,255]]
         self.edge_color = (255, 255, 255)
         # how big the 'points'/'nodes' are in our cube
         self.node_radius = 4
         # to slow down the viewer
-        self.fps = None # default=None for testing set to 5, it will slow down generation a lot
-        # primarily for testing or redueced generation
+        # default=None for testing set to 5, it will slow down generation a lot
+        self.fps = fps
         # leave False unless testing
-        self.limit_samples = False
+        self.limit_samples = 10
         # use exsiting position and data
 
     def add_wireframe(self, name, wireframe):
@@ -51,7 +51,7 @@ class Projector(object):
         '''
         self.wireframes[name] = wireframe
 
-    def run(self):
+    def run(self, test=False):
         '''
         Run pygame and dispaly our wireframes
         '''
@@ -86,11 +86,14 @@ class Projector(object):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-
-            # go to the next rotation, recenter our wireframe
-            for radians, axis in zip(seq[seq_step] , ('x','y','z')*len(seq)):
-                self.rotate_all(axis, radians)
-            cube.center_wireframe((self.width//2, self.width//2,0))
+            if test:
+                # for
+                pass
+            else:
+                # go to the next rotation, recenter our wireframe
+                for radians, axis in zip(seq[seq_step] , ('x','y','z')*len(seq)):
+                    self.rotate_all(axis, radians)
+                cube.center_wireframe((self.width//2, self.width//2, 0))
 
             # print every 100 steps the progress
             if not seq_step % 100: prog = round(seq_step/len(seq)*100, 2); print(f'progress: {prog}%')
@@ -112,12 +115,13 @@ class Projector(object):
             # update the display of our cube
             self.display()
             pygame.display.update()
-            # save a picture, then reset the cube to its original positions/rotations
-            # self.save_projection(key, str(seq_step))
+            # save a picture, then reset the cube to its
+            # original positions/rotations
+            #self.save_projection(key, str(seq_step))
             cube.reset_nodes()
 
         # once we exit the run loop save the positions
-        self.save_wireframe_data(rotation_positions)
+        #self.save_wireframe_data(rotation_positions)
         pygame.quit()
 
     def display(self):
@@ -160,9 +164,9 @@ class Projector(object):
                                                 )
 
             if self.display_nodes:
-                for node in wireframe.nodes:
+                for node, color in zip(wireframe.nodes, self.node_colors):
                     pygame.draw.circle(self.screen,
-                                    self.node_color,
+                                    color,
                                     (int(node[0]), int(node[1])),
                                     self.node_radius,
                                     0
@@ -199,7 +203,6 @@ class Projector(object):
         rotation_matrix = getattr(wf, rotate_func_name)(radians)
         for _,wireframe in self.wireframes.items():
             wireframe.transform(rotation_matrix)
-
 
     def save_projection(self, name, idx=datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')):
         '''
@@ -250,10 +253,18 @@ def parse_args(args):
     p = argparse.ArgumentParser()
     p.add_argument('-f', '--fps', type=int, default=None, help='The frames per second of the generation process.')
     p.add_argument('-s', '--step-size', type=float, default=0.3, help='The step size for the rotations')
+    p.add_argument('-t', '--test-npy', type=str, help='Tests a numpy file to make sure it\'s good.')
+    p.add_argument('-d', '--data-save', action='store_true', help='Whether to save data.')
+    return p.parse_args(args)
 
 if __name__ == '__main__':
-    # original colors
-    p = Projector(256, 256)
+    args = parse_args(sys.argv[1:]).__dict__
+    fps = args['fps']
+    step = args['step_size']
+    test = args['test_npy']
+    save = args['data_save']
+
+    p = Projector(256, 256, fps, save, step)
     cube_nodes = [[x,y,z] for x in (0,100) for y in (0,100) for z in (0,100)]
     cube_nodes = np.array(cube_nodes)
     cube_faces = [[0,1,3,2], [7,5,4,6], [4,5,1,0], [2,3,7,6], [0,2,6,4], [5,7,3,1]]
@@ -263,36 +274,6 @@ if __name__ == '__main__':
     cube = wf.Wireframe(cube_nodes, cube_faces, cube_colors)
     p.add_wireframe('cube1', cube)
     p.run()
-    # code for generating other cubesew
-    # # different colors
-    # p = Projector(500, 500)
-    # cube_colors = [
-    # [75,43,23],
-    # [255, 200, 255],
-    # [120,0,50],
-    # [80,180,80],
-    # [75,75,130],
-    # [99,27,33]
-    # ]
-    # cube_colors = np.array(cube_colors)
-    # cube = wf.Wireframe(cube_nodes, cube_faces, cube_colors)
-    # p.add_wireframe('cube2', cube)
-    # p.run()
-    #
-    # # shifted colors
-    # p = Projector(500, 500)
-    # cube_colors = [
-    # [199,21,133],
-    # [75,0,130],
-    # [70,130,180],
-    # [128,0,0],
-    # [154,205,50],
-    # [255, 255, 255]
-    # ]
-    # cube_colors = np.array(cube_colors)
-    # cube = wf.Wireframe(cube_nodes, cube_faces, cube_colors)
-    # p.add_wireframe('cube2', cube)
-    # p.run()
 
 '''
 Resources / Credits:
