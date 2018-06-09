@@ -33,7 +33,7 @@ class Projector(object):
         self.display_nodes = True
         self.display_faces = True
         # what color to paint nodes edges
-        self.node_colors = [[0,255,0],[255,255,0],[255, 0, 0],[0,0,255],[0,255,255],[0,200,255],[255,200,255],[200,200,255]]
+        self.node_colors = [[0,255,0],[255,255,0],[255, 0, 0],[150,150,255],[0,255,255],[0,200,255],[255,200,255],[200,200,255]]
         # how big the 'points'/'nodes' are in our cube
         self.node_radius = 5
         # to slow down the viewer
@@ -143,6 +143,7 @@ class Projector(object):
         '''
         self.screen.fill(self.background)
         for wireframe in self.wireframes.values():
+            towardus_nodes = []
             nodes = wireframe.nodes
             if self.display_faces:
                 for face_color in zip(wireframe.sorted_faces()):
@@ -160,19 +161,27 @@ class Projector(object):
                     towards_us = np.dot(normal, np.array([0,0,-1]))
 
                     if towards_us:
+                        poly_nodes = []
+                        for node in face:
+                            poly_nodes.append((nodes[node,0], nodes[node,1]))
+                            towardus_nodes.append(node)
                         # draw all our faces
                         pygame.draw.polygon(self.screen,
                                             color,
-                                            [(nodes[node,0], nodes[node,1]) for node in face],
+                                            poly_nodes,
                                             0)
             if self.display_nodes:
-                for node, color in zip(wireframe.nodes, self.node_colors):
-                    pygame.draw.circle(self.screen,
-                                    color,
-                                    (int(node[0]), int(node[1])),
-                                    self.node_radius,
-                                    0
-                                    )
+                print(set(towardus_nodes))
+                # for each node if there is no face in front of a node
+                # then show the node
+                for i, (node, color) in enumerate(zip(wireframe.nodes, self.node_colors)):
+                    if i in towardus_nodes:
+                        pygame.draw.circle(self.screen,
+                                        color,
+                                        (int(node[0]), int(node[1])),
+                                        self.node_radius,
+                                        0
+                                        )
     def translate_all(self, vector):
         '''
         Translate all wireframes on the screen.
