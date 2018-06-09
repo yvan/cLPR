@@ -87,7 +87,7 @@ class Wireframe(object):
     '''
     A wireframe for our 3d model.
     '''
-    def __init__(self, nodes, faces=[], facecolors=[]):
+    def __init__(self, nodes, nodecolors=[], faces=[], facecolors=[]):
         '''
         Creates our wireframe
         Args:
@@ -106,6 +106,7 @@ class Wireframe(object):
         self.edges = np.zeros((0,2)).astype(np.int)
         self.faces = faces
         self.facecolors = facecolors
+        self.nodecolors = nodecolors
 
         if self.faces != [] and self.facecolors != []:
             for node_list, color in zip(faces, facecolors):
@@ -205,7 +206,9 @@ if __name__ == '__main__':
     cube_faces = np.array(cube_faces)
     cube_colors = [[255, 0, 0],[0,255,0],[0,0,255],[255,255,0],[255,0,255],[0,255,255]]
     cube_colors = np.array(cube_colors)
-    cube = Wireframe(cube_nodes, cube_faces, cube_colors)
+    cube_node_colors = [[0,255,0],[255,255,0],[0,255,255],[150,150,255],[255, 0, 0],[0,100,255],[255,200,255],[255,255,255]]
+    cube_node_colors = np.array(cube_node_colors)
+    cube = Wireframe(cube_nodes, cube_node_colors, cube_faces, cube_colors)
     cube.output_nodes()
     cube.output_edges()
     cube.output_faces()
