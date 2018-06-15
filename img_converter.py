@@ -29,18 +29,20 @@ if __name__ == '__main__':
     dim2 = args['dim2']
     format = args['format'].upper()
     ext = format.lower()
-    
+
     if format == 'JPG': format = 'JPEG'
 
     img_paths = glob.glob(g)
-    print(g)
-    print(img_paths)
-    for img_path in img_paths:
+
+    for i, img_path in enumerate(img_paths):
         img = Image.open(img_path)
         path, basename = os.path.split(img_path)
         basename, _ = os.path.splitext(basename)
         if dim1 and dim2:
             img = img.resize((dim1,dim2))
         saveto = os.path.join(f'{out}', f'{basename}.{ext}')
-        print(f'saving to {saveto}')
+        if not i % 25000:
+            prog = i / len(img_paths)
+            print(f'{prog}%')
+            print(f'saving this iteration to {saveto}')
         img.save(saveto, format=format, subsampling=0, quality=100)
